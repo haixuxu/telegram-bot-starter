@@ -19,6 +19,5 @@ echo "exec $cmd"
 result=$(eval "$cmd")
 echo "$result"
 
-envset="export BOT_TOKEN=$BOT_TOKEN;export BOT_HOST=$BOT_HOST;export AZURE_GPT_ENDPOINT=$AZURE_GPT_ENDPOINT;export AZURE_GPT_KEY=$AZURE_GPT_KEY;export AZURE_GPT_DEPLOYMENT_NAME=$AZURE_GPT_DEPLOYMENT_NAME"
 
- ssh -i $SSH_PATH/deploy_key $SSH_USERNAME@$SSH_HOSTNAME "cd $SSH_RSYNC_DIR;yarn;$envset;pm2 restart app.yml"
+ ssh -i $SSH_PATH/deploy_key $SSH_USERNAME@$SSH_HOSTNAME "cd $SSH_RSYNC_DIR;yarn;pm2 restart app.yml"
