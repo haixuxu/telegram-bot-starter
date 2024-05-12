@@ -99,7 +99,7 @@ async function handleMessage(msg) {
     let msg2 = "";
     for await (const event of events) {
       for (const choice of event.choices) {
-        const delta = choice.delta?.content;
+        const delta = choice.delta&&choice.delta.content;
         if (delta !== undefined) {
           msg2 += delta;
         }

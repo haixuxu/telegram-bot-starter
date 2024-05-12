@@ -18,3 +18,7 @@ cmd="rsync  -avzr --delete --exclude node_modules --exclude '.git*' -e '$rsync_e
 echo "exec $cmd"
 result=$(eval "$cmd")
 echo "$result"
+
+pm2cmd="pm2 restart app.yml --BOT_TOKEN=$BOT_TOKEN --BOT_HOST=$BOT_HOST --AZURE_GPT_ENDPOINT=$AZURE_GPT_ENDPOINT --AZURE_GPT_KEY=$AZURE_GPT_KEY --AZURE_GPT_DEPLOYMENT_NAME=$AZURE_GPT_DEPLOYMENT_NAME"
+
+ ssh $sshpos "cd $SSH_RSYNC_DIR;yarn;$pm2cmd"
