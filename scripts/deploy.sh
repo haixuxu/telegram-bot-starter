@@ -13,6 +13,6 @@ sshpos="$SSH_USERNAME@$SSH_HOSTNAME:$SSH_RSYNC_DIR"
 rsync_e_args="ssh -i ${SSH_PATH}/deploy_key -o StrictHostKeyChecking=no"
 
 # Do deployment
-cmd="rsync  -avzr --delete --exclude node_modules --exclude '.git*' -e '$rsync_e_args' '$GITHUB_WORKSPACE/*' $sshpos"
+cmd="rsync  -avzr --delete --exclude node_modules --exclude '.git*' -e '$rsync_e_args' '$GITHUB_WORKSPACE/*' '$sshpos'"
 echo "exec $cmd"
 `$cmd`
