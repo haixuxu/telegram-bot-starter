@@ -19,4 +19,4 @@ result=$(eval "$cmd")
 echo "$result"
 
 
- ssh -i $SSH_PATH/deploy_key $SSH_USERNAME@$SSH_HOSTNAME "cd $SSH_RSYNC_DIR;yarn;pm2 restart app.yml"
+ ssh -i $SSH_PATH/deploy_key $SSH_USERNAME@$SSH_HOSTNAME "cd $SSH_RSYNC_DIR;yarn install --production;pm2 restart app.yml"

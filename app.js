@@ -81,27 +81,19 @@ function handleCommand(command, msg) {
   const userId = msg.from.id;
   if (command === "/start") {
     chatUsers[userId] = msg.from;
-    sendTextMessage(
-      chatId,
-      `session created >> you can start chat now, to stop with /stop`
-    );
-  } else if (command === "/stop") {
+    sendTextMessage(chatId, `welcome to here >> command /start /clear /chat:<expression>`);
+  } else if (command === "/clear") {
     delete chatUsers[userId];
     chatgpt.stopChat(userId);
-    sendTextMessage(
-      chatId,
-      `session destoryed >> stop chat success!, to start with /start`
-    );
-  } else if (command === "/help") {
-    sendTextMessage(chatId, "welcome to here >> command /start /stop /help");
-  } else if (/^\/chatgpt:/.test(command)) {
-    respChatgpt(chatId, msg.from, msg.text.slice(8));
+    sendTextMessage(chatId,`clear chatgpt session success!`);
+  } else if (/^\/chat:/.test(command)) {
+    respChatgpt(chatId, msg.from, msg.text.slice(5));
   }
 }
 
 async function respChatgpt(chatId, msgFrom, text) {
   const events = await chatgpt.startChat(msgFrom.id, text);
-  let msg2 =`>>>>bot reply to ${msgFrom.first_name} ${msgFrom.last_name}>>>>>`.padEnd(48,'>')+'\n';
+  let msg2 = `>>>>bot reply to ${msgFrom.first_name} ${msgFrom.last_name}>>>>>`.padEnd(48, '>') + '\n';
   for await (const event of events) {
     for (const choice of event.choices) {
       const delta = choice.delta && choice.delta.content;
@@ -110,7 +102,7 @@ async function respChatgpt(chatId, msgFrom, text) {
       }
     }
   }
-  msg2+='\n<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'
+  msg2 += '\n<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'
   sendTextMessage(chatId, msg2);
 }
 
@@ -118,6 +110,10 @@ function handleMessage(msg) {
   logger.info("handle message:" + JSON.stringify(msg));
   const userId = msg.from.id;
   const chatId = msg.chat.id;
+  if (!msg.text) {
+    logger.info("missing text ignore");
+    return;
+  }
   if (msg.text[0] === "/") {
     // controller
     handleCommand(msg.text, msg);
@@ -127,10 +123,10 @@ function handleMessage(msg) {
     sendTextMessage(
       chatId,
       "welcome!" +
-        msg.from.first_name +
-        " " +
-        msg.from.last_name +
-        " start with /help"
+      msg.from.first_name +
+      " " +
+      msg.from.last_name +
+      " start with /help"
     );
   }
 }
