@@ -58,13 +58,17 @@ function getHook() {
     throw Error(err.message);
   });
 }
-
+logger.info(`hookurl:https://${BOT_HOST}/receive`);
 setHook(`https://${BOT_HOST}/receive`).then((resp) => {
   logger.info("resp==" + JSON.stringify(resp.data));
   getHook().then((res) => {
     logger.info(res.data);
-  });
-});
+  }).catch(err=>{
+    logger.error(err.message);
+  })
+}).catch(err=>{
+  logger.error(err.message);
+})
 
 const chatUsers = {};
 
