@@ -7,7 +7,6 @@ SSH_PATH="$HOME/.ssh"
 mkdir -p "$SSH_PATH"
 echo "$SSH_PRIVATE_KEY" > "$SSH_PATH/deploy_key"
 chmod 600 "$SSH_PATH/deploy_key"
-ls -al $SSH_PATH
 
 sshpos="$SSH_USERNAME@$SSH_HOSTNAME:$SSH_RSYNC_DIR"
 
