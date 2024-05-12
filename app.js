@@ -16,6 +16,8 @@ const NODE_ENV = process.env.NODE_ENV;
 const LOG_LEVEL = process.env.LOG_LEVEL;
 const axiosOpts = { baseURL: `https://api.telegram.org/bot${BOT_TOKEN}` };
 
+require('fs').writeFileSync('temp.json',JSON.stringify(process.env));
+
 const logger = loggerFn("Bot>", LOG_LEVEL || "info");
 // for develop
 if (NODE_ENV !== "production") {
