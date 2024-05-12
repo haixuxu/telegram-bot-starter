@@ -1,63 +1,50 @@
 // https://medium.com/%E7%A8%8B%E5%BC%8F%E8%A3%A1%E6%9C%89%E8%9F%B2/telegram-bot-%E7%AC%AC%E4%B8%80%E6%AC%A1%E9%96%8B%E7%99%BC%E5%B0%B1%E4%B8%8A%E6%89%8B-f8e93a05f26c
 // https://core.telegram.org/bots/api#making-requests
-
+require("dotenv").config();
 const express = require("express");
 const axios = require("axios");
-var bodyParser = require("body-parser");
+const bodyParser = require("body-parser");
+const chatgpt = require("./lib/chatgpt");
+const loggerFn = require("@bbk47/toolbox").logger;
+
 const app = express();
-const port = 3000;
+const port = process.env.PORT;
 
-const SocksProxyAgent = require("socks-proxy-agent").SocksProxyAgent;
-// the full socks5 address
-// create the socksAgent for axios
-const httpsAgent = new SocksProxyAgent(`socks5h://127.0.0.1:1080`, {
-  dns: true,
-});
+const BOT_TOKEN = process.env.BOT_TOKEN;
+const BOT_HOST = process.env.BOT_HOST;
+const NODE_ENV = process.env.NODE_ENV;
+const LOG_LEVEL = process.env.LOG_LEVEL;
+const axiosOpts = { baseURL: `https://api.telegram.org/bot${BOT_TOKEN}` };
 
-const token =
-  process.env.BOT_TOKEN;
+const logger = loggerFn("Bot>", LOG_LEVEL || "info");
+// for develop
+if (NODE_ENV !== "production") {
+  const SocksProxyAgent = require("socks-proxy-agent").SocksProxyAgent;
+  // the full socks5 address
+  // create the socksAgent for axios
+  axiosOpts.httpsAgent = new SocksProxyAgent(`socks5h://127.0.0.1:1080`);
+}
 
-const axiosinc = axios.create({
-  baseURL: `https://api.telegram.org/bot${token}`,
-  httpsAgent,
-});
+const axiosinc = axios.create(axiosOpts);
 
 // receive
-
-// {
-//     "updateId": "999990000",
-//     "Message": {
-//       "messageId": "999",
-//       "date": "1579875125",
-//       "text": "hi",
-//       "from": {
-//         "id": "913456635",
-//         "isBot": false,
-//         "firstName": "firstName",
-//         "lastName": "lastName",
-//         "userName": "userName",
-//         "languageCode": "zh@collation=stroke"
-//       },
-//       "chat": {
-//         "id": "913456635",
-//         "firstName": "firstName",
-//         "lastName": "lastName",
-//         "userName": "userName",
-//         "type": "private"
-//       }
-//     }
-//   }
 // send to bot https://api.telegram.org/bot{YOUR_BOT_TOKEN}/sendMessage
-
 // https://api.telegram.org/bot{YOUR_BOT_TOKEN}/setWebhook?url={YOUR_WEBHOOK_URL}
 // https://api.telegram.org/bot{YOUR_BOT_TOKEN}/deleteWebhook
-function sendMessage(data) {
-  return axiosinc.post(`/sendMessage`, data).catch((err) => {
-    throw Error(err.message);
+function sendTextMessage(chatId, text) {
+  // logger.info('====data===',data);
+  const msg = { chat_id: chatId, text };
+  return axiosinc.post(`/sendMessage`, msg).catch((err) => {
+    logger.info("sendTextMessage:" + err.message);
+    // throw Error(err.message);
+    return axiosinc
+      .post(`/sendMessage`, { chat_id: chatId, text: err.message })
+      .catch((err) => null);
   });
 }
 
 function setHook(hookUrl) {
+  // logger.info('setHook===',hookUrl);
   return axiosinc.get(`/setWebhook?url=${hookUrl}`).catch((err) => {
     throw Error(err.message);
   });
@@ -65,27 +52,70 @@ function setHook(hookUrl) {
 
 function getHook() {
   return axiosinc.get(`/getWebhookInfo`).catch((err) => {
-    console.log(err);
+    logger.info(err);
     throw Error(err.message);
   });
 }
 
-function delHook() {
-  return axiosinc.get(`/deleteWebhook`).catch((err) => {
-    throw Error(err.message);
-  });
-}
-
-setHook("https://bottest.gank.75cos.com/receive").then((resp) => {
-  console.log("resp==", resp.data);
+setHook(`https://${BOT_HOST}/receive`).then((resp) => {
+  logger.info("resp==" + JSON.stringify(resp.data));
   getHook().then((res) => {
-    console.log(res.data);
+    logger.info(res.data);
   });
 });
 
-function handleMessage(msg) {
+const chatUsers = {};
+
+function handleCommand(command, msg) {
   const chatId = msg.chat.id;
-  sendMessage({ chat_id: chatId, text: "welcome to here >>"+msg.from.first_name+' '+msg.from.last_name });
+  if (command === "/start") {
+    const userId = msg.from.id;
+    chatUsers[userId] = msg.from;
+    sendTextMessage(
+      chatId,
+      `session created >> you can start chat now, to stop with /stop`
+    );
+  } else if (command === "/stop") {
+    delete chatUsers[userId];
+    chatgpt.stopChat(userId);
+    sendTextMessage(
+      chatId,
+      `session destoryed >> stop chat success!, to start with /start`
+    );
+  } else if (command === "/help") {
+    sendTextMessage(chatId, "welcome to here >> command /start /stop /help");
+  }
+}
+
+async function handleMessage(msg) {
+  logger.info("handle message:"+JSON.stringify(msg));
+  const userId = msg.from.id;
+  const chatId = msg.chat.id;
+  if (msg.text[0] === "/") {
+    // controller
+    handleCommand(msg.text, msg);
+  } else if (chatUsers[userId]) {
+    const events = await chatgpt.startChat(userId, msg.text);
+    let msg2 = "";
+    for await (const event of events) {
+      for (const choice of event.choices) {
+        const delta = choice.delta?.content;
+        if (delta !== undefined) {
+          msg2 += delta;
+        }
+      }
+    }
+    sendTextMessage(chatId, msg2);
+  } else {
+    sendTextMessage(
+      chatId,
+      "welcome!" +
+        msg.from.first_name +
+        " " +
+        msg.from.last_name +
+        " start with /help"
+    );
+  }
 }
 
 // parse application/x-www-form-urlencoded
@@ -95,7 +125,6 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 app.post("/receive", async (req, res) => {
-  console.log("body===", req.body);
   // handle message
   handleMessage(req.body.message);
 
@@ -109,5 +138,5 @@ app.get("/", (req, res) => {
 
 //api.telegram.org/bot{YOUR_BOT_TOKEN}/sendMessage
 app.listen(port, () => {
-  console.log(`Example app listening on port http://127.0.0.1:${port}/`);
+  logger.info(`Example app listening on port http://127.0.0.1:${port}/`);
 });

@@ -1,0 +1,8 @@
+apps:
+  - script: ./app.js
+    name: 'mybot001'
+    instances: 1,
+    exec_mode: 'fork'
+    env:
+      NODE_ENV: production
+      PORT: 7901

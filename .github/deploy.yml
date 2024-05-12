@@ -1,0 +1,23 @@
+name: deploy
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Setup .npmrc file to publish to npm
+      - name: deploy
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_HOSTNAME: ${{ secrets.SSH_HOSTNAME }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_RSYNC_DIR: ${{ secrets.SSH_RSYNC_DIR }}
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          BOT_HOST: ${{ secrets.BOT_HOST }}
+          AZURE_GPT_ENDPOINT: ${{ secrets.AZURE_GPT_ENDPOINT }}
+          AZURE_GPT_KEY: ${{ secrets.AZURE_GPT_KEY }}
+          AZURE_GPT_DEPLOYMENT_NAME: ${{ secrets.AZURE_GPT_DEPLOYMENT_NAME }}
+        run: |
+          # 在这里进行您的构建步骤
+          ./scripts/deploy.sh
