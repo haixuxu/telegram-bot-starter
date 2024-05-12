@@ -5,10 +5,10 @@ const express = require("express");
 const axios = require("axios");
 const bodyParser = require("body-parser");
 const chatgpt = require("./lib/chatgpt");
-const loggerFn = require("@bbk47/toolbox").logger;
+const loggerFn = require('./lib/logger');
 
 const app = express();
-const port = process.env.PORT;
+const port = process.env.PORT||3000;
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const BOT_HOST = process.env.BOT_HOST;
